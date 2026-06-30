@@ -1,0 +1,8 @@
+[
+	{
+		"category": "ui",
+		"description": "some ui feature",
+		"steps": ["step 1", "step 2"],
+		"passes": false
+	}
+]
