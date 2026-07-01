@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import {
     game, dispatch, hasSavedGame, resumeSavedGame, discardSavedGame,
   } from './stores/game';
@@ -7,19 +6,14 @@
   import Table from './components/Table.svelte';
   import Settlement from './components/Settlement.svelte';
 
-  let showResume = $state(false);
-
-  onMount(() => {
-    if (!$game && hasSavedGame()) showResume = true;
-  });
+  // Offer to resume whenever we're at the menu (no active game) but a save exists.
+  const showResume = $derived($game === null && hasSavedGame());
 
   function resume() {
     resumeSavedGame();
-    showResume = false;
   }
   function startFresh() {
     discardSavedGame();
-    showResume = false;
   }
 </script>
 

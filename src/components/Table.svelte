@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { GameState, Street } from '../engine/types';
   import { currentPot, canStartHand } from '../engine/engine';
-  import { dispatch, undo, canUndo } from '../stores/game';
+  import { dispatch, undo, canUndo, quitToMenu } from '../stores/game';
   import { chips, dollars } from '../lib/format';
   import Seat from './Seat.svelte';
   import Board from './Board.svelte';
@@ -14,6 +14,7 @@
 
   let showManage = $state(false);
   let showHistory = $state(false);
+  let confirmQuit = $state(false);
 
   const n = $derived(g.players.length);
   const pot = $derived(currentPot(g));
@@ -84,6 +85,7 @@
       <button onclick={undo} disabled={!$canUndo} aria-label="Undo">↩</button>
       <button onclick={() => (showHistory = true)} aria-label="History">☰</button>
       <button onclick={() => (showManage = true)}>Players</button>
+      <button class="quit-btn" onclick={() => (confirmQuit = true)}>Quit</button>
     </div>
   </div>
 
@@ -147,6 +149,18 @@
 {#if showHistory}
   <History state={g} onClose={() => (showHistory = false)} />
 {/if}
+{#if confirmQuit}
+  <div class="quit-overlay" role="dialog" aria-modal="true">
+    <div class="quit-card">
+      <h3>Leave this game?</h3>
+      <p>Your game is saved — you can resume it from the menu.</p>
+      <div class="quit-btns">
+        <button class="keep" onclick={() => (confirmQuit = false)}>Keep playing</button>
+        <button class="leave" onclick={quitToMenu}>Quit to menu</button>
+      </div>
+    </div>
+  </div>
+{/if}
 
 <style>
   .wrap {
@@ -184,6 +198,52 @@
   .tools button {
     padding: 8px 12px;
     background: #16281e;
+  }
+  .tools .quit-btn {
+    background: #2a1a17;
+    color: #ffb3a7;
+  }
+  .quit-overlay {
+    position: fixed;
+    inset: 0;
+    background: #000c;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    z-index: 80;
+  }
+  .quit-card {
+    background: #0d1c15;
+    border: 1px solid #23382c;
+    border-radius: 18px;
+    padding: 24px 22px;
+    max-width: 360px;
+    width: 100%;
+    text-align: center;
+  }
+  .quit-card h3 {
+    margin: 0 0 8px;
+    font-size: 20px;
+  }
+  .quit-card p {
+    margin: 0 0 18px;
+    color: var(--muted);
+  }
+  .quit-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .quit-btns button {
+    padding: 14px;
+    font-weight: 700;
+  }
+  .quit-btns .keep {
+    background: var(--felt);
+  }
+  .quit-btns .leave {
+    background: #3a1f1c;
+    color: #ff9b8f;
   }
   .felt {
     position: relative;

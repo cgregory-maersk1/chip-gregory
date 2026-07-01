@@ -142,6 +142,13 @@ export function resumeSavedGame(): boolean {
   }
 }
 
+/** Return to the main menu, keeping the saved game so it can be resumed. */
+export function quitToMenu(): void {
+  undoStack = [];
+  canUndo.set(false);
+  game.set(null); // localStorage save is intentionally left intact
+}
+
 /** Forget the saved game and reset the store. */
 export function discardSavedGame(): void {
   undoStack = [];
