@@ -34,6 +34,9 @@
     const target = player.committedThisStreet + la.toCall + Math.round(potAfterCall * fraction);
     raiseTo = Math.max(la.minRaiseTo, Math.min(target, la.maxTo));
   }
+  function bump(n: number) {
+    raiseTo = Math.max(la.minRaiseTo, Math.min(raiseTo + n, la.maxTo));
+  }
 
   const extra = $derived(raiseTo - player.committedThisStreet); // chips this raise costs
   const canFullRaise = $derived(la.maxTo >= la.minRaiseTo);
@@ -61,6 +64,11 @@
         <button onclick={() => preset(0.5)}>½ Pot</button>
         <button onclick={() => preset(1)}>Pot</button>
         <button onclick={() => (raiseTo = la.maxTo)}>Max</button>
+      </div>
+      <div class="steppers">
+        <button onclick={() => bump(1)} disabled={raiseTo >= la.maxTo}>+1</button>
+        <button onclick={() => bump(2)} disabled={raiseTo >= la.maxTo}>+2</button>
+        <button onclick={() => bump(5)} disabled={raiseTo >= la.maxTo}>+5</button>
       </div>
       <div class="raise-actions">
         <button class="ghost" onclick={() => (raising = false)}>Cancel</button>
@@ -168,6 +176,19 @@
     padding: 10px 4px;
     background: #16281e;
     font-size: 14px;
+  }
+  .steppers {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .steppers button {
+    padding: 12px 4px;
+    background: #14231b;
+    border: 1px solid #294034;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--gold);
   }
   .raise-actions {
     display: grid;
