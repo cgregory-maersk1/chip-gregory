@@ -178,40 +178,71 @@ function orderForOddChip(s: GameState, winnerIds: string[]): string[] {
   });
 }
 
-/** Add chips to a player (buy-in top-up or re-buy). Between hands only. */
+/**
+ * Add chips to a player (buy-in top-up or re-buy). Between hands only — table
+ * stakes means you can't add to your stack mid-hand.
+ */
 export function addChips(state: GameState, seat: number, amount: number): GameState {
   if (amount <= 0) return state;
+  if (state.phase === 'hand' || state.phase === 'showdown') return state;
   const s = clone(state);
   const p = s.players[seat];
   if (!p) throw new Error('No such seat');
   if (p.status === 'cashedOut') throw new Error('Player has cashed out');
   p.stack += amount;
   p.totalInvested += amount;
-  if (p.status === 'sittingOut' && p.stack > 0 && s.phase !== 'hand') p.status = 'active';
+  if (p.status === 'sittingOut' && p.stack > 0) p.status = 'active';
   return s;
 }
 
-/** Player leaves the table; their current stack is their final result. */
+/**
+ * Player leaves the table; their current stack is their final result. If they
+ * leave mid-hand they're folded out of it and play continues (a stuck turn
+ * pointer is repaired). Not allowed during showdown — award the pot first.
+ */
 export function cashOut(state: GameState, seat: number): GameState {
+  if (state.phase === 'showdown') return state;
   const s = clone(state);
   const p = s.players[seat];
   if (!p) throw new Error('No such seat');
   p.status = 'cashedOut';
+  if (s.phase === 'hand' && s.hand) return resolveStart(s);
   return s;
 }
 
+/** Sit a player out. Mid-hand this folds them and play continues. */
 export function sitOut(state: GameState, seat: number): GameState {
+  if (state.phase === 'showdown') return state;
   const s = clone(state);
   const p = s.players[seat];
-  if (p && p.status !== 'cashedOut') p.status = 'sittingOut';
+  if (!p || p.status === 'cashedOut') return s;
+  p.status = 'sittingOut';
+  if (s.phase === 'hand' && s.hand) return resolveStart(s);
   return s;
 }
 
+/** Sit a player back in. Takes effect from the next hand (between hands only). */
 export function sitIn(state: GameState, seat: number): GameState {
+  if (state.phase === 'hand' || state.phase === 'showdown') return state;
   const s = clone(state);
   const p = s.players[seat];
   if (p && p.status === 'sittingOut' && p.stack > 0) p.status = 'active';
   return s;
+}
+
+/**
+ * Repair a hand whose acting seat can no longer act (e.g. a player was cashed
+ * out mid-hand under an older build). No-op for healthy states.
+ */
+export function healHand(state: GameState): GameState {
+  if (
+    state.phase === 'hand' &&
+    state.hand &&
+    state.players[state.hand.actingSeat]?.status !== 'active'
+  ) {
+    return resolveStart(state);
+  }
+  return state;
 }
 
 export function endGame(state: GameState): GameState {

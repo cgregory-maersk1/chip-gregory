@@ -1,6 +1,6 @@
 import { writable, get } from 'svelte/store';
 import type { GameState } from '../engine/types';
-import { createGame, reduce, serialize, deserialize, type GameEvent, type SetupPlayer } from '../engine/engine';
+import { createGame, reduce, serialize, deserialize, healHand, type GameEvent, type SetupPlayer } from '../engine/engine';
 import { blindsForMinutes } from '../engine/blinds';
 import type { GameConfig } from '../engine/types';
 
@@ -133,8 +133,9 @@ export function resumeSavedGame(): boolean {
     if (!state) return false;
     startedAt = parsed.startedAt ?? Date.now();
     undoStack = [];
-    game.set(state);
+    game.set(healHand(state)); // repair a stuck hand from an older build
     canUndo.set(false);
+    persist();
     return true;
   } catch {
     return false;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createGame, startHand, awardShowdown, DEFAULT_CONFIG } from './engine';
+import { createGame, startHand, awardShowdown, cashOut, sitOut, healHand, DEFAULT_CONFIG } from './engine';
 import { applyAction, legalActions } from './betting';
 import type { GameConfig, GameState, ActionType } from './types';
 
@@ -137,6 +137,35 @@ describe('split pot with odd chip', () => {
     // 9 / 2 = 4 each + odd chip to seat1
     expect(s.players[1].stack).toBe(197 + 5); // invested 3, +5
     expect(s.players[2].stack).toBe(197 + 4);
+  });
+});
+
+describe('leaving mid-hand does not get stuck', () => {
+  it('cashing out the acting player folds them and advances the turn', () => {
+    let s = deal([200, 200, 200]); // UTG (seat 0) to act
+    expect(s.hand!.actingSeat).toBe(0);
+    s = cashOut(s, 0);
+    expect(s.players[0].status).toBe('cashedOut');
+    expect(s.phase).toBe('hand');
+    // turn moved on to an active player who can act
+    expect(s.players[s.hand!.actingSeat].status).toBe('active');
+    expect(s.hand!.actingSeat).not.toBe(0);
+  });
+
+  it('cashing out down to one contender awards the hand', () => {
+    let s = deal([200, 200, 200]);
+    s = cashOut(s, 0); // UTG out
+    s = sitOut(s, 1); // SB out -> only BB left in the hand
+    expect(s.phase).toBe('handEnd');
+    expect(s.history).toHaveLength(1);
+  });
+
+  it('healHand repairs a hand stuck on a non-active acting seat', () => {
+    let s = deal([200, 200, 200]);
+    // Simulate an old-build bug: mark the acting player cashed out directly.
+    s.players[s.hand!.actingSeat].status = 'cashedOut';
+    const healed = healHand(s);
+    expect(healed.players[healed.hand!.actingSeat]?.status).toBe('active');
   });
 });
 

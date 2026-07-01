@@ -10,6 +10,9 @@
   );
   let confirmingSeat = $state<number | null>(null);
 
+  const inHand = $derived(g.phase === 'hand');
+  const inShowdown = $derived(g.phase === 'showdown');
+
   function addChips(seat: number) {
     const amt = Number(amounts[seat]) || 0;
     if (amt > 0) dispatch({ type: 'ADD_CHIPS', seat, amount: amt });
@@ -22,6 +25,11 @@
       <h2>Manage players</h2>
       <button class="close" onclick={onClose} aria-label="Close">✕</button>
     </header>
+    {#if inShowdown}
+      <p class="lock">Award the pot before changing players.</p>
+    {:else if inHand}
+      <p class="lock">Re-buys &amp; sit-ins apply between hands. Cashing a player out mid-hand folds them.</p>
+    {/if}
     <div class="list">
       {#each g.players as p (p.id)}
         <div class="row" class:out={p.status === 'cashedOut'}>
@@ -56,16 +64,34 @@
             {:else}
               <div class="controls">
                 <div class="rebuy">
-                  <input type="number" min="1" step="10" bind:value={amounts[p.seat]} />
-                  <button class="add" onclick={() => addChips(p.seat)}>Add</button>
+                  <input
+                    type="number"
+                    min="1"
+                    step="10"
+                    bind:value={amounts[p.seat]}
+                    disabled={inHand || inShowdown}
+                  />
+                  <button class="add" onclick={() => addChips(p.seat)} disabled={inHand || inShowdown}>
+                    Add
+                  </button>
                 </div>
                 <div class="toggles">
                   {#if p.status === 'sittingOut'}
-                    <button onclick={() => dispatch({ type: 'SIT_IN', seat: p.seat })}>Sit in</button>
+                    <button
+                      onclick={() => dispatch({ type: 'SIT_IN', seat: p.seat })}
+                      disabled={inHand || inShowdown}
+                    >
+                      Sit in
+                    </button>
                   {:else}
-                    <button onclick={() => dispatch({ type: 'SIT_OUT', seat: p.seat })}>Sit out</button>
+                    <button
+                      onclick={() => dispatch({ type: 'SIT_OUT', seat: p.seat })}
+                      disabled={inShowdown}
+                    >
+                      Sit out
+                    </button>
                   {/if}
-                  <button class="cash" onclick={() => (confirmingSeat = p.seat)}>
+                  <button class="cash" onclick={() => (confirmingSeat = p.seat)} disabled={inShowdown}>
                     Cash out
                   </button>
                 </div>
@@ -210,5 +236,15 @@
     font-size: 12px;
     text-align: center;
     margin: 14px 0 0;
+  }
+  .lock {
+    background: #2a2412;
+    border: 1px solid #5a4a1e;
+    color: #ffd88a;
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 13px;
+    text-align: center;
+    margin: 0 0 12px;
   }
 </style>
