@@ -20,7 +20,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   smallBlind: 1,
   bigBlind: 2,
   defaultBuyIn: 200,
-  chipValue: 0.05,
+  chipValue: 1,
   escalation: { enabled: false, mode: 'hands', interval: 10, factor: 2 },
 };
 

@@ -1,16 +1,34 @@
 <script lang="ts">
-  import { newGame } from '../stores/game';
+  import { newGame, getLastRoster } from '../stores/game';
   import type { GameConfig } from '../engine/types';
 
   let names = $state<string[]>(['', '', '']);
   let smallBlind = $state(1);
   let bigBlind = $state(2);
   let buyIn = $state(200);
-  let chipValue = $state(0.05);
+  let chipValue = $state(1);
   let escalate = $state(false);
   let escMode = $state<'hands' | 'minutes'>('minutes');
   let escInterval = $state(15);
   let escFactor = $state(2);
+
+  // Offer to reuse the previous game's players.
+  const last = getLastRoster();
+  let showLast = $state(last !== null);
+
+  function useLastPlayers() {
+    if (!last) return;
+    names = [...last.names];
+    smallBlind = last.config.smallBlind;
+    bigBlind = last.config.bigBlind;
+    buyIn = last.config.defaultBuyIn;
+    chipValue = last.config.chipValue;
+    escalate = last.config.escalation.enabled;
+    escMode = last.config.escalation.mode;
+    escInterval = last.config.escalation.interval;
+    escFactor = last.config.escalation.factor;
+    showLast = false;
+  }
 
   function addPlayer() {
     if (names.length < 10) names = [...names, ''];
@@ -54,6 +72,19 @@
     <h1>Chip Gregory</h1>
     <p>Set up your table</p>
   </header>
+
+  {#if showLast && last}
+    <div class="last-roster">
+      <div class="lr-text">
+        <strong>Play again?</strong>
+        <span>{last.names.join(', ')}</span>
+      </div>
+      <div class="lr-actions">
+        <button class="lr-use" onclick={useLastPlayers}>Use same players</button>
+        <button class="lr-dismiss" onclick={() => (showLast = false)}>Start fresh</button>
+      </div>
+    </div>
+  {/if}
 
   <section>
     <h2>Players ({names.length})</h2>
@@ -171,6 +202,40 @@
     letter-spacing: 1px;
     color: var(--muted);
     margin: 0 0 10px;
+  }
+  .last-roster {
+    background: #13301f;
+    border: 1px solid #2f7a4d;
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .lr-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .lr-text strong {
+    font-size: 16px;
+  }
+  .lr-text span {
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .lr-actions {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 10px;
+  }
+  .lr-use {
+    background: var(--felt);
+    font-weight: 700;
+  }
+  .lr-dismiss {
+    background: #16281e;
+    color: var(--muted);
   }
   section {
     background: #10231a;

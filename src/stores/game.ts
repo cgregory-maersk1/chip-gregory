@@ -5,7 +5,41 @@ import { blindsForMinutes } from '../engine/blinds';
 import type { GameConfig } from '../engine/types';
 
 const SAVE_KEY = 'chip-gregory:v1';
+const ROSTER_KEY = 'chip-gregory:last';
 const UNDO_LIMIT = 100;
+
+export interface LastRoster {
+  names: string[];
+  buyIns: number[];
+  config: GameConfig;
+}
+
+function saveRoster(players: SetupPlayer[], config: GameConfig): void {
+  try {
+    localStorage.setItem(
+      ROSTER_KEY,
+      JSON.stringify({
+        names: players.map((p) => p.name),
+        buyIns: players.map((p) => p.buyIn ?? config.defaultBuyIn),
+        config,
+      }),
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
+/** The roster from the most recent game, for "play again with the same players". */
+export function getLastRoster(): LastRoster | null {
+  try {
+    const raw = localStorage.getItem(ROSTER_KEY);
+    if (!raw) return null;
+    const r = JSON.parse(raw) as LastRoster;
+    return r?.names?.length ? r : null;
+  } catch {
+    return null;
+  }
+}
 
 /** The current game (null until a game is created or resumed). */
 export const game = writable<GameState | null>(null);
@@ -45,6 +79,7 @@ function commit(next: GameState, recordUndo: boolean): void {
 export function newGame(players: SetupPlayer[], config: GameConfig): void {
   undoStack = [];
   startedAt = Date.now();
+  saveRoster(players, config);
   commit(createGame(players, config), false);
 }
 
