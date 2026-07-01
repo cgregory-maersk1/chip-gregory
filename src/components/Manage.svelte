@@ -8,6 +8,7 @@
   let amounts = $state<Record<number, number>>(
     Object.fromEntries(g.players.map((p) => [p.seat, g.config.defaultBuyIn])),
   );
+  let confirmingSeat = $state<number | null>(null);
 
   function addChips(seat: number) {
     const amt = Number(amounts[seat]) || 0;
@@ -33,22 +34,43 @@
             </div>
           </div>
           {#if p.status !== 'cashedOut'}
-            <div class="controls">
-              <div class="rebuy">
-                <input type="number" min="1" step="10" bind:value={amounts[p.seat]} />
-                <button class="add" onclick={() => addChips(p.seat)}>Add</button>
+            {#if confirmingSeat === p.seat}
+              <div class="confirm">
+                <div class="ctotal">
+                  Cashing out with <strong>{chips(p.stack)}</strong> chips
+                  = <span class="cdollars">{dollars(p.stack, g.config.chipValue)}</span>
+                </div>
+                <div class="cbtns">
+                  <button class="ghost" onclick={() => (confirmingSeat = null)}>Cancel</button>
+                  <button
+                    class="cash"
+                    onclick={() => {
+                      dispatch({ type: 'CASH_OUT', seat: p.seat });
+                      confirmingSeat = null;
+                    }}
+                  >
+                    Confirm cash out
+                  </button>
+                </div>
               </div>
-              <div class="toggles">
-                {#if p.status === 'sittingOut'}
-                  <button onclick={() => dispatch({ type: 'SIT_IN', seat: p.seat })}>Sit in</button>
-                {:else}
-                  <button onclick={() => dispatch({ type: 'SIT_OUT', seat: p.seat })}>Sit out</button>
-                {/if}
-                <button class="cash" onclick={() => dispatch({ type: 'CASH_OUT', seat: p.seat })}>
-                  Cash out
-                </button>
+            {:else}
+              <div class="controls">
+                <div class="rebuy">
+                  <input type="number" min="1" step="10" bind:value={amounts[p.seat]} />
+                  <button class="add" onclick={() => addChips(p.seat)}>Add</button>
+                </div>
+                <div class="toggles">
+                  {#if p.status === 'sittingOut'}
+                    <button onclick={() => dispatch({ type: 'SIT_IN', seat: p.seat })}>Sit in</button>
+                  {:else}
+                    <button onclick={() => dispatch({ type: 'SIT_OUT', seat: p.seat })}>Sit out</button>
+                  {/if}
+                  <button class="cash" onclick={() => (confirmingSeat = p.seat)}>
+                    Cash out
+                  </button>
+                </div>
               </div>
-            </div>
+            {/if}
           {/if}
         </div>
       {/each}
@@ -146,6 +168,42 @@
   .toggles .cash {
     background: #3a1f1c;
     color: #ff9b8f;
+  }
+  .confirm {
+    margin-top: 10px;
+    background: #0c1c14;
+    border: 1px solid #3a2a12;
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .ctotal {
+    text-align: center;
+    font-size: 15px;
+  }
+  .ctotal strong {
+    color: var(--gold);
+    font-size: 20px;
+  }
+  .cdollars {
+    color: var(--gold);
+    font-weight: 700;
+  }
+  .cbtns {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 10px;
+  }
+  .cbtns .ghost {
+    background: #23241f;
+    color: var(--muted);
+  }
+  .cbtns .cash {
+    background: #3a1f1c;
+    color: #ff9b8f;
+    font-weight: 700;
   }
   .note {
     color: var(--muted);
