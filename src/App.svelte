@@ -1,13 +1,14 @@
 <script lang="ts">
   import {
-    game, dispatch, hasSavedGame, resumeSavedGame, discardSavedGame, rematch,
+    game, savedExists, dispatch, resumeSavedGame, discardSavedGame, rematch,
   } from './stores/game';
   import Setup from './components/Setup.svelte';
   import Table from './components/Table.svelte';
   import Settlement from './components/Settlement.svelte';
 
-  // Offer to resume whenever we're at the menu (no active game) but a save exists.
-  const showResume = $derived($game === null && hasSavedGame());
+  // Offer to resume whenever we're at the menu (no active game) but a save
+  // exists. Both dependencies are reactive stores so this updates reliably.
+  const showResume = $derived($game === null && $savedExists);
 
   function resume() {
     resumeSavedGame();

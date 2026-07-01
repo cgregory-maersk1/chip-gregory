@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { get } from 'svelte/store';
 import {
-  game, canUndo, newGame, dispatch, undo,
-  hasSavedGame, resumeSavedGame, discardSavedGame,
+  game, canUndo, savedExists, newGame, dispatch, undo,
+  hasSavedGame, resumeSavedGame, discardSavedGame, quitToMenu, rematch,
 } from './game';
 import { DEFAULT_CONFIG } from '../engine/engine';
 
@@ -58,5 +58,29 @@ describe('game store', () => {
     discardSavedGame();
     expect(get(game)).toBeNull();
     expect(hasSavedGame()).toBe(false);
+  });
+
+  it('quit mid-game keeps a resumable save; starting fresh clears it reactively', () => {
+    newGame(players, DEFAULT_CONFIG);
+    dispatch({ type: 'START_HAND' });
+
+    quitToMenu();
+    expect(get(game)).toBeNull();
+    expect(get(savedExists)).toBe(true); // menu can offer Resume
+
+    // The bug: with game already null, "start fresh" must still flip the flag.
+    discardSavedGame();
+    expect(get(savedExists)).toBe(false); // menu now shows the fresh setup
+    expect(hasSavedGame()).toBe(false);
+  });
+
+  it('rematch keeps the same players with fresh stacks', () => {
+    newGame(players, DEFAULT_CONFIG);
+    dispatch({ type: 'START_HAND' });
+    rematch();
+    const g = get(game);
+    expect(g?.phase).toBe('setup');
+    expect(g?.players.map((p) => p.name)).toEqual(['Al', 'Bea', 'Cy']);
+    expect(g?.players.every((p) => p.stack === DEFAULT_CONFIG.defaultBuyIn)).toBe(true);
   });
 });

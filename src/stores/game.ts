@@ -45,13 +45,28 @@ export function getLastRoster(): LastRoster | null {
 export const game = writable<GameState | null>(null);
 /** Whether an undo step is available. */
 export const canUndo = writable(false);
+/**
+ * Reactive flag for "a resumable saved game exists on disk". Kept as a store
+ * (not a localStorage read) so the menu's resume prompt updates reliably — a
+ * plain `hasSavedGame()` read isn't reactive, and `game.set(null)` when already
+ * null is a no-op that wouldn't re-trigger a derived.
+ */
+export const savedExists = writable(readSavedExists());
+
+function readSavedExists(): boolean {
+  try {
+    return localStorage.getItem(SAVE_KEY) != null;
+  } catch {
+    return false;
+  }
+}
 
 let undoStack: string[] = [];
 let startedAt = 0; // epoch ms — drives minutes-mode blind escalation
 
 function persist(): void {
+  const state = get(game);
   try {
-    const state = get(game);
     if (state) {
       localStorage.setItem(SAVE_KEY, JSON.stringify({ state, startedAt }));
     } else {
@@ -60,6 +75,7 @@ function persist(): void {
   } catch {
     /* storage may be unavailable (private mode) — degrade gracefully */
   }
+  savedExists.set(state != null);
 }
 
 function commit(next: GameState, recordUndo: boolean): void {
@@ -170,4 +186,5 @@ export function discardSavedGame(): void {
   } catch {
     /* ignore */
   }
+  savedExists.set(false); // reactive even though game was already null
 }
