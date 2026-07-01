@@ -220,6 +220,13 @@ export function endGame(state: GameState): GameState {
   return s;
 }
 
+/** Return from the settlement screen to the table to keep playing. */
+export function resumePlay(state: GameState): GameState {
+  const s = clone(state);
+  if (s.phase === 'gameOver') s.phase = s.hand ? 'hand' : 'handEnd';
+  return s;
+}
+
 // --- Reducer (used by the store) ---
 
 export type GameEvent =
@@ -231,7 +238,8 @@ export type GameEvent =
   | { type: 'CASH_OUT'; seat: number }
   | { type: 'SIT_OUT'; seat: number }
   | { type: 'SIT_IN'; seat: number }
-  | { type: 'END_GAME' };
+  | { type: 'END_GAME' }
+  | { type: 'RESUME_PLAY' };
 
 export function reduce(state: GameState, event: GameEvent): GameState {
   switch (event.type) {
@@ -253,6 +261,8 @@ export function reduce(state: GameState, event: GameEvent): GameState {
       return sitIn(state, event.seat);
     case 'END_GAME':
       return endGame(state);
+    case 'RESUME_PLAY':
+      return resumePlay(state);
   }
 }
 

@@ -1,0 +1,156 @@
+<script lang="ts">
+  import type { GameState } from '../engine/types';
+  import { dispatch } from '../stores/game';
+  import { chips, dollars } from '../lib/format';
+
+  let { g, onClose }: { g: GameState; onClose: () => void } = $props();
+
+  let amounts = $state<Record<number, number>>(
+    Object.fromEntries(g.players.map((p) => [p.seat, g.config.defaultBuyIn])),
+  );
+
+  function addChips(seat: number) {
+    const amt = Number(amounts[seat]) || 0;
+    if (amt > 0) dispatch({ type: 'ADD_CHIPS', seat, amount: amt });
+  }
+</script>
+
+<div class="overlay" role="dialog" aria-modal="true">
+  <div class="sheet">
+    <header>
+      <h2>Manage players</h2>
+      <button class="close" onclick={onClose} aria-label="Close">✕</button>
+    </header>
+    <div class="list">
+      {#each g.players as p (p.id)}
+        <div class="row" class:out={p.status === 'cashedOut'}>
+          <div class="who">
+            <div class="pname">{p.name}</div>
+            <div class="pstack">
+              {chips(p.stack)} chips · in {dollars(p.totalInvested, g.config.chipValue)}
+              {#if p.status === 'cashedOut'}<span class="tag">cashed out</span>
+              {:else if p.status === 'sittingOut'}<span class="tag">sitting out</span>{/if}
+            </div>
+          </div>
+          {#if p.status !== 'cashedOut'}
+            <div class="controls">
+              <div class="rebuy">
+                <input type="number" min="1" step="10" bind:value={amounts[p.seat]} />
+                <button class="add" onclick={() => addChips(p.seat)}>Add</button>
+              </div>
+              <div class="toggles">
+                {#if p.status === 'sittingOut'}
+                  <button onclick={() => dispatch({ type: 'SIT_IN', seat: p.seat })}>Sit in</button>
+                {:else}
+                  <button onclick={() => dispatch({ type: 'SIT_OUT', seat: p.seat })}>Sit out</button>
+                {/if}
+                <button class="cash" onclick={() => dispatch({ type: 'CASH_OUT', seat: p.seat })}>
+                  Cash out
+                </button>
+              </div>
+            </div>
+          {/if}
+        </div>
+      {/each}
+    </div>
+    <p class="note">Re-buys and top-ups add to a player's stack and their total invested.</p>
+  </div>
+</div>
+
+<style>
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: #000a;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 50;
+  }
+  .sheet {
+    background: #0d1c15;
+    width: 100%;
+    max-width: 560px;
+    max-height: 88vh;
+    overflow-y: auto;
+    border-radius: 18px 18px 0 0;
+    border: 1px solid #23382c;
+    padding: 16px 14px calc(16px + env(safe-area-inset-bottom));
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  header h2 {
+    margin: 0;
+    font-size: 18px;
+  }
+  .close {
+    background: #1c2b22;
+    padding: 8px 12px;
+  }
+  .list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .row {
+    background: #10231a;
+    border: 1px solid #23382c;
+    border-radius: 12px;
+    padding: 12px;
+  }
+  .row.out {
+    opacity: 0.5;
+  }
+  .pname {
+    font-weight: 700;
+    font-size: 16px;
+  }
+  .pstack {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 2px;
+  }
+  .tag {
+    background: #2a2a2a;
+    color: #ccc;
+    padding: 1px 6px;
+    border-radius: 6px;
+    font-size: 11px;
+    margin-left: 6px;
+  }
+  .controls {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .rebuy {
+    display: flex;
+    gap: 6px;
+  }
+  .rebuy input {
+    width: 90px;
+  }
+  .rebuy .add {
+    background: var(--felt);
+  }
+  .toggles {
+    display: flex;
+    gap: 6px;
+  }
+  .toggles .cash {
+    background: #3a1f1c;
+    color: #ff9b8f;
+  }
+  .note {
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+    margin: 14px 0 0;
+  }
+</style>

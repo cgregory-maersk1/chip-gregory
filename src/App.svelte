@@ -1,51 +1,103 @@
 <script lang="ts">
-  // Temporary shell — replaced by the real router (Setup → Table → Settlement)
-  // once the engine and UI components land. Confirms the app + PWA boot.
-  const version = '0.1.0';
+  import { onMount } from 'svelte';
+  import {
+    game, dispatch, hasSavedGame, resumeSavedGame, discardSavedGame,
+  } from './stores/game';
+  import Setup from './components/Setup.svelte';
+  import Table from './components/Table.svelte';
+  import Settlement from './components/Settlement.svelte';
+
+  let showResume = $state(false);
+
+  onMount(() => {
+    if (!$game && hasSavedGame()) showResume = true;
+  });
+
+  function resume() {
+    resumeSavedGame();
+    showResume = false;
+  }
+  function startFresh() {
+    discardSavedGame();
+    showResume = false;
+  }
 </script>
 
-<main>
-  <div class="chip">CG</div>
-  <h1>Chip Gregory</h1>
-  <p>Home-game poker chip &amp; betting tracker</p>
-  <small>v{version} — scaffold</small>
-</main>
+{#if $game && $game.phase === 'gameOver'}
+  <Settlement
+    state={$game}
+    onResume={() => dispatch({ type: 'RESUME_PLAY' })}
+    onNewGame={() => discardSavedGame()}
+  />
+{:else if $game}
+  <Table g={$game} />
+{:else}
+  <Setup />
+{/if}
+
+{#if showResume}
+  <div class="resume-overlay" role="dialog" aria-modal="true">
+    <div class="card">
+      <div class="chip">CG</div>
+      <h2>Welcome back</h2>
+      <p>You have a game in progress. Pick up where you left off?</p>
+      <button class="resume" onclick={resume}>Resume game</button>
+      <button class="fresh" onclick={startFresh}>Start a new game</button>
+    </div>
+  </div>
+{/if}
 
 <style>
-  main {
-    flex: 1;
+  .resume-overlay {
+    position: fixed;
+    inset: 0;
+    background: #000c;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    z-index: 80;
+  }
+  .card {
+    background: #0d1c15;
+    border: 1px solid #23382c;
+    border-radius: 18px;
+    padding: 28px 22px;
+    max-width: 360px;
+    width: 100%;
+    text-align: center;
     display: flex;
     flex-direction: column;
+    gap: 12px;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-    text-align: center;
-    padding: 24px;
-    background: radial-gradient(circle at 50% 35%, var(--felt), var(--felt-dark));
   }
   .chip {
-    width: 96px;
-    height: 96px;
+    width: 56px;
+    height: 56px;
     border-radius: 50%;
     display: grid;
     place-items: center;
     font-weight: 800;
-    font-size: 32px;
     color: var(--felt-dark);
     background: var(--gold);
-    border: 6px dashed #fff6;
-    box-shadow: 0 8px 24px #0008;
+    border: 4px dashed #fff6;
   }
-  h1 {
-    margin: 8px 0 0;
-    letter-spacing: 0.5px;
+  h2 {
+    margin: 4px 0 0;
   }
   p {
     margin: 0;
     color: var(--muted);
   }
-  small {
+  .card button {
+    width: 100%;
+    padding: 14px;
+    font-weight: 700;
+  }
+  .resume {
+    background: var(--felt);
+  }
+  .fresh {
+    background: #16281e;
     color: var(--muted);
-    opacity: 0.7;
   }
 </style>
