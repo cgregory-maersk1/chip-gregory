@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { GameState, Street } from '../engine/types';
   import { currentPot, canStartHand } from '../engine/engine';
-  import { dispatch, undo, canUndo, quitToMenu } from '../stores/game';
+  import { dispatch, undo, canUndo, quitToMenu, rematch } from '../stores/game';
   import { chips, dollars } from '../lib/format';
   import Seat from './Seat.svelte';
   import Board from './Board.svelte';
@@ -135,7 +135,11 @@
             Deal {g.handNo === 0 ? 'first' : 'next'} hand
           </button>
         {:else}
-          <p class="need">Need at least 2 players with chips. Add a re-buy under Players.</p>
+          <p class="need">
+            Game over — one player has all the chips. Re-buy under Players to keep this game going,
+            or start a rematch.
+          </p>
+          <button class="deal" onclick={rematch}>Rematch — same players, fresh buy-ins</button>
         {/if}
         <button class="settle" onclick={() => dispatch({ type: 'END_GAME' })}>End game &amp; settle up</button>
       </div>

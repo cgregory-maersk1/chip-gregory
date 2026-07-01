@@ -1,6 +1,6 @@
 <script lang="ts">
   import {
-    game, dispatch, hasSavedGame, resumeSavedGame, discardSavedGame,
+    game, dispatch, hasSavedGame, resumeSavedGame, discardSavedGame, rematch,
   } from './stores/game';
   import Setup from './components/Setup.svelte';
   import Table from './components/Table.svelte';
@@ -21,6 +21,7 @@
   <Settlement
     state={$game}
     onResume={() => dispatch({ type: 'RESUME_PLAY' })}
+    onRematch={() => rematch()}
     onNewGame={() => discardSavedGame()}
   />
 {:else if $game}

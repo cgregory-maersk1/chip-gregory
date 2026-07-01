@@ -6,8 +6,14 @@
   let {
     state,
     onResume,
+    onRematch,
     onNewGame,
-  }: { state: GameState; onResume: () => void; onNewGame: () => void } = $props();
+  }: {
+    state: GameState;
+    onResume: () => void;
+    onRematch: () => void;
+    onNewGame: () => void;
+  } = $props();
 
   const s = $derived(computeSettlement(state.players, state.config.chipValue));
   const ranked = $derived([...s.nets].sort((a, b) => b.netChips - a.netChips));
@@ -57,9 +63,10 @@
     {/if}
   </section>
 
+  <button class="rematch" onclick={onRematch}>Rematch — same players, fresh buy-ins</button>
   <div class="buttons">
     <button class="resume" onclick={onResume}>Keep playing</button>
-    <button class="new" onclick={onNewGame}>New game</button>
+    <button class="new" onclick={onNewGame}>New setup</button>
   </div>
 </div>
 
@@ -190,10 +197,17 @@
     font-weight: 700;
     font-size: 16px;
   }
+  .rematch {
+    padding: 16px;
+    font-weight: 700;
+    font-size: 16px;
+    background: var(--felt);
+    border: 1px solid #1f8a52;
+  }
   .resume {
     background: #16281e;
   }
   .new {
-    background: var(--felt);
+    background: #16281e;
   }
 </style>

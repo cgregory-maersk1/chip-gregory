@@ -142,6 +142,17 @@ export function resumeSavedGame(): boolean {
   }
 }
 
+/** Start a fresh game with the same (non-cashed-out) players and settings. */
+export function rematch(): void {
+  const s = get(game);
+  if (!s) return;
+  const players = s.players
+    .filter((p) => p.status !== 'cashedOut')
+    .map((p) => ({ name: p.name }));
+  if (players.length < 2) return;
+  newGame(players, s.config);
+}
+
 /** Return to the main menu, keeping the saved game so it can be resumed. */
 export function quitToMenu(): void {
   undoStack = [];
