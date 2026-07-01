@@ -4,6 +4,7 @@
   import { dispatch, undo, canUndo } from '../stores/game';
   import { chips, dollars } from '../lib/format';
   import Seat from './Seat.svelte';
+  import Board from './Board.svelte';
   import ActionBar from './ActionBar.svelte';
   import Showdown from './Showdown.svelte';
   import Manage from './Manage.svelte';
@@ -17,6 +18,17 @@
   const n = $derived(g.players.length);
   const pot = $derived(currentPot(g));
   const canDeal = $derived(canStartHand(g));
+
+  // Community cards shown: 0 pre-flop, 3 flop, 4 turn, 5 river/showdown.
+  const boardCount = $derived.by(() => {
+    switch (g.hand?.street) {
+      case 'flop': return 3;
+      case 'turn': return 4;
+      case 'river':
+      case 'showdown': return 5;
+      default: return 0;
+    }
+  });
 
   const streetLabel: Record<Street, string> = {
     preflop: 'Pre-flop', flop: 'Flop', turn: 'Turn', river: 'River', showdown: 'Showdown',
@@ -76,14 +88,17 @@
   </div>
 
   <div class="felt">
-    <div class="pot">
-      {#if pot > 0}
-        <div class="pot-amt">{chips(pot)}</div>
-        <div class="pot-sub">pot · {dollars(pot, g.config.chipValue)}</div>
-      {/if}
-      {#if g.hand}
-        <div class="street">{streetLabel[g.hand.street]}</div>
-      {/if}
+    <div class="center">
+      <Board count={boardCount} />
+      <div class="pot">
+        {#if pot > 0}
+          <div class="pot-amt">{chips(pot)}</div>
+          <div class="pot-sub">pot · {dollars(pot, g.config.chipValue)}</div>
+        {/if}
+        {#if g.hand}
+          <div class="street">{streetLabel[g.hand.street]}</div>
+        {/if}
+      </div>
     </div>
 
     {#each g.players as p, i (p.id)}
@@ -180,11 +195,18 @@
     border: 10px solid var(--felt-rail);
     box-shadow: inset 0 0 60px #00000055, 0 10px 30px #0006;
   }
-  .pot {
+  .center {
     position: absolute;
-    top: 40%;
+    top: 42%;
     left: 50%;
     transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: max-content;
+  }
+  .pot {
     text-align: center;
   }
   .pot-amt {
